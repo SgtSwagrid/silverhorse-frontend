@@ -136,6 +136,7 @@ class Item extends Component<MutableItemProps, ItemState> {
         this.setState({ title: e.target.value });
     }
 
+    // Called when an item is deleted.
     onDelete(e: React.MouseEvent) {
         e.preventDefault();
         this.props.delete();
@@ -193,7 +194,10 @@ class ItemList extends Component<ListProps, ListState> {
         )
     }
 
+    // Called by child items to rename themselves.
     rename(id: number, title: string) {
+
+        // Update state so as to incorporate the new name.
         let index = (this.state.items as Array<ItemProps>)
             .findIndex(i => i.id === id);
         let items = [...(this.state.items as Array<ItemProps>)];
@@ -201,14 +205,27 @@ class ItemList extends Component<ListProps, ListState> {
         item.post.title = title;
         items[index] = item;
         this.setState({ items: items });
+
+        /* NOTE: Here, one would make a HTTP request to the server,
+         * asking that the entry be renamed for real.
+         * JSONPlaceholder's mock requests are no good here, since
+         * this project uses random values from multiple tables. */
     }
 
+    // Called by child items to delete themselves.
     delete(id: number) {
+
+        // Update state so as to incorporate the deletion.
         let index = (this.state.items as Array<ItemProps>)
             .findIndex(i => i.id === id);
         let items = [...(this.state.items as Array<ItemProps>)]
         items.splice(index, 1);
         this.setState({ items: items });
+
+        /* NOTE: Here, one would make a HTTP request to the server,
+         * asking that the entry be deleted for real.
+         * JSONPlaceholder's mock requests are no good here, since
+         * this project uses random values from multiple tables. */
     }
 
     // Generate a series of random items.
