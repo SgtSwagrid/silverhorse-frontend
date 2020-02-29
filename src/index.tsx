@@ -18,12 +18,13 @@ const URL = 'https://jsonplaceholder.typicode.com/';
 
 // Item construction properties.
 interface ItemProps {
-    key: number,
+    id: number,
     post: Post,
     album: Album,
     user: User
 }
 
+// Item props with functions for modifying the item.
 interface MutableItemProps extends ItemProps {
     rename: Function,
     delete: Function
@@ -33,7 +34,6 @@ interface MutableItemProps extends ItemProps {
 interface ItemState {
     selected: boolean,
     title: string,
-    modifiedTitle: string,
     hover: boolean
 }
 
@@ -45,10 +45,8 @@ class Item extends Component<MutableItemProps, ItemState> {
     state = {
         // When selected, an item can be modified.
         selected: false,
-        // The current title.
+        // The new title.
         title: this.props.post.title,
-        // The newly modified title, yet to be saved.
-        modifiedTitle: this.props.post.title,
         //Whether the cursor is currently over this item.
         hover: false
     };
@@ -66,14 +64,14 @@ class Item extends Component<MutableItemProps, ItemState> {
                 onMouseEnter={this.onMouseEnter.bind(this)}
                 onMouseLeave={this.onMouseLeave.bind(this)}>
 
-                <td>{!this.state.selected ? this.state.title :
+                <td>{!this.state.selected ? this.props.post.title :
                     /* If item is selected, show input box for renaming. */ (
-                        <span>
-                            <input type="text" ref={this.input}
-                                onChange={this.onRename.bind(this)}
-                                defaultValue={this.state.title} />
-                        </span>
-                    )}</td>
+                    <span>
+                        <input type="text" ref={this.input}
+                            onChange={this.onRename.bind(this)}
+                            defaultValue={this.state.title} />
+                    </span>
+                )}</td>
 
                 <td>{this.props.album.title}</td>
                 <td>{this.props.user.username} </td>
@@ -81,7 +79,7 @@ class Item extends Component<MutableItemProps, ItemState> {
                 <td>
                     {!this.state.hover ? '' :
                         /* Show a delete button while the cursor is hovering. */ (
-                        <button type="button" title="Delete"
+                        <button type="button" title="Delete" onClick={this.onDelete.bind(this)}
                             className="btn btn-danger btn-xs" >
                             <span className="glyphicon glyphicon-remove"></span>
                         </button>
@@ -94,40 +92,38 @@ class Item extends Component<MutableItemProps, ItemState> {
     // Called when the mouse is clicked, irrespective of cursor position.
     onClick(e: MouseEvent) {
 
+        if (this.row.current == null) return;
+
         // Select this item if it was clicked, and not already selected.
         if (this.row.current!.contains(e.target as Node)) {
             if (!this.state.selected) {
-
-                this.setState({
-                    selected: true,
-                    modifiedTitle: this.state.title
-                });
+                this.setState({ selected: true, });
                 this.input.current!.select();
             }
 
-            // Unselect this item if somewhere else was clicked.
+        // Unselect this item if somewhere else was clicked.
         } else {
             // Update the actual title.
             if (this.state.selected) {
-                this.setState({ title: this.state.modifiedTitle });
+                this.props.rename(this.state.title);
+                this.setState({ selected: false });
             }
-            this.setState({ selected: false });
         }
     }
 
-    // Called when any key is pressed.
+    // Called when any index is pressed.
     onKey(e: KeyboardEvent) {
 
         // If enter is pressed, unselect the item and save the modification.
         if (e.code === 'Enter') {
             if (this.state.selected) {
-                this.setState({ title: this.state.modifiedTitle });
+                this.props.rename(this.state.title);
+                this.setState({ selected: false });
             }
-            this.setState({ selected: false });
 
-            // If escape is pressed, unselect the item and discard the modification.
+        // If escape is pressed, unselect the item and discard the modification.
         } else if (e.code === 'Escape') {
-            this.setState({ selected: false });
+            this.setState({ selected: false, title: this.props.post.title });
         }
     }
 
@@ -137,7 +133,12 @@ class Item extends Component<MutableItemProps, ItemState> {
 
     // Called when the post title is modified to update the value.
     onRename(e: React.ChangeEvent<HTMLInputElement>) {
-        this.setState({ modifiedTitle: e.target.value });
+        this.setState({ title: e.target.value });
+    }
+
+    onDelete(e: React.MouseEvent) {
+        e.preventDefault();
+        this.props.delete();
     }
 
     // Enable the listeners while this component is present.
@@ -153,11 +154,20 @@ class Item extends Component<MutableItemProps, ItemState> {
     }
 }
 
-// The ItemList accepts an array of item objects to show.
-interface ListProps { items: Array<ItemProps> }
+interface ListProps { }
+// List of items which have been generated.
+interface ListState { items: Array<ItemProps> }
 
-// List of items, displayed as a table.
-class ItemList extends Component<ListProps> {
+// Generate and display list of items in a table.
+class ItemList extends Component<ListProps, ListState> {
+
+    state = { items: [] };
+
+    constructor(prop: ItemProps) {
+        super(prop);
+        // Generate some random items, and then update the state accordingly.
+        this.createItems(NUM_ITEMS).then(i => this.setState({ items: i }));
+    }
 
     render() {
         return (
@@ -172,49 +182,38 @@ class ItemList extends Component<ListProps> {
                     </tr>
                 </thead>
                 <tbody>
-                    {this.props.items.map(i => (
-                        <Item key={i.key} post={i.post}
+                    {(this.state.items as Array<ItemProps>).map(i => (
+                        <Item id={i.id} post={i.post}
                             album={i.album} user={i.user}
-                            rename={this.rename} delete={this.delete} />
-                    ))}
+                            rename={(t: string) => this.rename(i.id, t)}
+                            delete={() => this.delete(i.id)} />
+                        ))}
                 </tbody>
             </table>
         )
     }
 
-    rename(key: number, title: string) {
-
+    rename(id: number, title: string) {
+        let index = (this.state.items as Array<ItemProps>)
+            .findIndex(i => i.id === id);
+        let items = [...(this.state.items as Array<ItemProps>)];
+        let item = { ...items[index] };
+        item.post.title = title;
+        items[index] = item;
+        this.setState({ items: items });
     }
 
-    delete(key: number) {
-
-    }
-}
-
-interface AppProps { }
-// List of items which have been generated.
-interface AppState { items: Array<ItemProps> }
-
-/* Top-level component for generating random items.
- * Delegates to ItemList to display the items in a table. */
-class CrudApp extends Component<AppProps, AppState> {
-
-    state = { items: [] };
-
-    constructor(prop: AppProps) {
-        super(prop);
-        // Generate some random items, and then update the state accordingly.
-        this.createItems(NUM_ITEMS).then(i => this.setState({ items: i }));
-    }
-
-    render() {
-        // Render a list of all items.
-        return (<ItemList items={this.state.items} />);
+    delete(id: number) {
+        let index = (this.state.items as Array<ItemProps>)
+            .findIndex(i => i.id === id);
+        let items = [...(this.state.items as Array<ItemProps>)]
+        items.splice(index, 1);
+        this.setState({ items: items });
     }
 
     // Generate a series of random items.
     createItems(quantity: number) {
-        return Promise.all([...Array(quantity)].map((_, i) => this.createItem(i)))
+        return Promise.all([...Array(quantity)].map((_, id) => this.createItem(id)))
     }
 
     /* Generate a new item using random values from JSONPlaceholder.
@@ -226,7 +225,7 @@ class CrudApp extends Component<AppProps, AppState> {
      * NOTE 2: Since the values are chosen at random, there is nothing
      * to prevent repeated values. This can be solved by first getting a list
      * of all values, and removing values from the list as they are chosen. */
-    createItem(key: number) {
+    createItem(id: number) {
 
         // Generate a random integer between min and max (inclusive).
         function random(min: number, max: number) {
@@ -234,9 +233,9 @@ class CrudApp extends Component<AppProps, AppState> {
         }
 
         // Select a random post, album and user.
-        var postId = random(1, NUM_POSTS);
-        var albumId = random(1, NUM_ALBUMS);
-        var userId = random(1, NUM_USERS);
+        let postId = random(1, NUM_POSTS);
+        let albumId = random(1, NUM_ALBUMS);
+        let userId = random(1, NUM_USERS);
 
         // Acquire relevant information from the server.
         return Promise.all([
@@ -247,7 +246,7 @@ class CrudApp extends Component<AppProps, AppState> {
             // Wait for the completion of all requests, and construct an 'Item'.
         ]).then(r => {
             return {
-                key: key, post: r[0], album: r[1], user: r[2]
+                id: id, post: r[0], album: r[1], user: r[2]
             }
         });
     }
@@ -294,4 +293,4 @@ interface User {
 }
 
 // Script entry point; generate and display a list of random items.
-ReactDOM.render(<CrudApp />, document.getElementById("item-list"));
+ReactDOM.render(<ItemList />, document.getElementById("item-list"));
