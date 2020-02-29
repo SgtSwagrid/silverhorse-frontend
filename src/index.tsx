@@ -34,7 +34,8 @@ interface MutableItemProps extends ItemProps {
 interface ItemState {
     selected: boolean,
     title: string,
-    hover: boolean
+    hover: boolean,
+    mounted: boolean
 }
 
 /* Item type, featuring a post, album and user.
@@ -48,13 +49,16 @@ class Item extends Component<MutableItemProps, ItemState> {
         // The new title.
         title: this.props.post.title,
         //Whether the cursor is currently over this item.
-        hover: false
+        hover: false,
+        mounted: false
     };
 
     // Reference to the table row which this item occupies.
     row: RefObject<HTMLTableRowElement> = React.createRef();
     // Reference to the input box for renaming post titles.
     input: RefObject<HTMLInputElement> = React.createRef();
+    // Reference to the delete button for this item.
+    delete: RefObject<HTMLButtonElement> = React.createRef();
 
     render() {
         return (
@@ -79,7 +83,7 @@ class Item extends Component<MutableItemProps, ItemState> {
                 <td>
                     {!this.state.hover ? '' :
                         /* Show a delete button while the cursor is hovering. */ (
-                        <button type="button" title="Delete" onClick={this.onDelete.bind(this)}
+                        <button type="button" title="Delete" ref={this.delete}
                             className="btn btn-danger btn-xs" >
                             <span className="glyphicon glyphicon-remove"></span>
                         </button>
@@ -92,26 +96,24 @@ class Item extends Component<MutableItemProps, ItemState> {
     // Called when the mouse is clicked, irrespective of cursor position.
     onClick(e: MouseEvent) {
 
-        if (this.row.current == null) return;
+        if (this.row.current != null
+            && this.row.current!.contains(e.target as Node)) {
 
-        // Select this item if it was clicked, and not already selected.
-        if (this.row.current!.contains(e.target as Node)) {
-            if (!this.state.selected) {
-                this.setState({ selected: true, });
+            if (this.delete.current!.contains(e.target as Node)) {
+                this.props.delete();
+                this.setState({ selected: false });
+
+            } else if (!this.state.selected) {
+                this.setState({ title: this.props.post.title, selected: true });
                 this.input.current!.select();
             }
-
-        // Unselect this item if somewhere else was clicked.
         } else {
-            // Update the actual title.
-            if (this.state.selected) {
-                this.props.rename(this.state.title);
-                this.setState({ selected: false });
-            }
+            this.props.rename(this.state.title);
+            this.setState({ selected: false });
         }
     }
 
-    // Called when any index is pressed.
+    // Called when any key is pressed.
     onKey(e: KeyboardEvent) {
 
         // If enter is pressed, unselect the item and save the modification.
@@ -144,6 +146,7 @@ class Item extends Component<MutableItemProps, ItemState> {
 
     // Enable the listeners while this component is present.
     componentDidMount() {
+        this.setState({ mounted: true });
         document.addEventListener('click', this.onClick.bind(this));
         document.addEventListener('keydown', this.onKey.bind(this));
     }
@@ -152,6 +155,7 @@ class Item extends Component<MutableItemProps, ItemState> {
     componentWillUnmount() {
         document.removeEventListener('click', this.onClick.bind(this));
         document.removeEventListener('keydown', this.onKey.bind(this));
+        this.setState({ mounted: false });
     }
 }
 
@@ -202,6 +206,7 @@ class ItemList extends Component<ListProps, ListState> {
             .findIndex(i => i.id === id);
         let items = [...(this.state.items as Array<ItemProps>)];
         let item = { ...items[index] };
+        if (item.post == null) return;
         item.post.title = title;
         items[index] = item;
         this.setState({ items: items });
