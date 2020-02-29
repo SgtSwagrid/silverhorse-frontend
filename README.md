@@ -1,19 +1,18 @@
 ## Overview
-A solution for the front-end recruitment test at Silverhorse:
-https://bitbucket.org/silverhorsetechteam/recruitment-tests/src/master/front-end.md
-A simple CRUD application, created using TypeScript and React.
-Written by Alec Dorrington.
+A solution for the front-end recruitment test at Silverhorse:<br />
+https://bitbucket.org/silverhorsetechteam/recruitment-tests/src/master/front-end.md<br />
+A simple CRUD application, created using TypeScript and React.<br />
+Written by Alec Dorrington.<br />
 
 ### Details
-Requires Node.js to run.
-Most of the interesting code can be found in /src/index.tsx.
-Items are collected at random from https://jsonplaceholder.typicode.com.
+Requires Node.js to run.<br />
+Most of the interesting code can be found in /src/index.tsx.<br />
+Items are collected at random from https://jsonplaceholder.typicode.com.<br />
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).<br />
 
 ### Usage
-Clicking on an item will allow you to change its post title.
-Hovering over an item will reveal a 'delete' button.
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Clicking on an item will allow you to change its post title.<br />
+Hovering over an item will reveal a 'delete' button.<br />
 
 ## Available Scripts
 
