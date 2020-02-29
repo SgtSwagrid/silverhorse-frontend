@@ -172,13 +172,13 @@ class ItemList extends Component<ListProps, ListState> {
     render() {
         return (
 
-            <table className='table table-hover'>
+            <table className='table table-hover table-striped'>
                 <thead>
                     <tr>
-                        <th>Post Title</th>
-                        <th>Album Title</th>
-                        <th>User Name</th>
-                        <th></th>
+                        <th className="col-xs-5">Post Title</th>
+                        <th className="col-xs-4">Album Title</th>
+                        <th className="col-xs-2">User Name</th>
+                        <th className="col-xs-1"></th>
                     </tr>
                 </thead>
                 <tbody>

@@ -8,3 +8,8 @@ span {
 span > input {
     width: 100%;
 }
+
+tr {
+    height: 50px;
+    min-height: 50px;
+}
