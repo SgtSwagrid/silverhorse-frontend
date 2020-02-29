@@ -34,8 +34,7 @@ interface MutableItemProps extends ItemProps {
 interface ItemState {
     selected: boolean,
     title: string,
-    hover: boolean,
-    mounted: boolean
+    hover: boolean
 }
 
 /* Item type, featuring a post, album and user.
@@ -49,8 +48,7 @@ class Item extends Component<MutableItemProps, ItemState> {
         // The new title.
         title: this.props.post.title,
         //Whether the cursor is currently over this item.
-        hover: false,
-        mounted: false
+        hover: false
     };
 
     // Reference to the table row which this item occupies.
@@ -93,23 +91,35 @@ class Item extends Component<MutableItemProps, ItemState> {
         );
     }
 
-    // Called when the mouse is clicked, irrespective of cursor position.
+    // Called when a mouse click is initiated.
     onClick(e: MouseEvent) {
 
+        // If this item is clicked,
         if (this.row.current != null
-            && this.row.current!.contains(e.target as Node)) {
+            && this.row.current!.contains(e.target as Node)
+            && !this.delete.current!.contains(e.target as Node)) {
 
-            if (this.delete.current!.contains(e.target as Node)) {
-                this.props.delete();
-                this.setState({ selected: false });
-
-            } else if (!this.state.selected) {
+            //and not already selected, select it.
+            if (!this.state.selected) {
                 this.setState({ title: this.props.post.title, selected: true });
                 this.input.current!.select();
             }
+
+        // If somewhere else is clicked, unselect this item.
         } else if (this.state.selected) {
             this.props.rename(this.state.title);
             this.setState({ selected: false });
+        }
+    }
+
+    // Called when a mouse click is released.
+    onRelease(e: MouseEvent) {
+
+        // Delete this item if the delete button is clicked on.
+        if (this.delete.current != null &&
+            this.delete.current!.contains(e.target as Node)) {
+
+            this.props.delete();
         }
     }
 
@@ -138,24 +148,18 @@ class Item extends Component<MutableItemProps, ItemState> {
         this.setState({ title: e.target.value });
     }
 
-    // Called when an item is deleted.
-    onDelete(e: React.MouseEvent) {
-        e.preventDefault();
-        this.props.delete();
-    }
-
     // Enable the listeners while this component is present.
     componentDidMount() {
-        this.setState({ mounted: true });
-        document.addEventListener('click', this.onClick.bind(this));
+        document.addEventListener('mousedown', this.onClick.bind(this));
+        document.addEventListener('mouseup', this.onRelease.bind(this));
         document.addEventListener('keydown', this.onKey.bind(this));
     }
 
     //Disable the listeners while this component is not present.
     componentWillUnmount() {
-        document.removeEventListener('click', this.onClick.bind(this));
+        document.removeEventListener('mousedown', this.onClick.bind(this));
+        document.removeEventListener('mouseup', this.onRelease.bind(this));
         document.removeEventListener('keydown', this.onKey.bind(this));
-        this.setState({ mounted: false });
     }
 }
 
