@@ -16,12 +16,17 @@ const NUM_ITEMS = 30;
 // The URL of JSONPlaceholder, the source of the fake data.
 const URL = 'https://jsonplaceholder.typicode.com/';
 
-// Immutable item properties, provided in advance.
+// Item construction properties.
 interface ItemProps {
     key: number,
     post: Post,
     album: Album,
     user: User
+}
+
+interface MutableItemProps extends ItemProps {
+    rename: Function,
+    delete: Function
 }
 
 // Internal item state, used to track user item modification.
@@ -35,7 +40,7 @@ interface ItemState {
 /* Item type, featuring a post, album and user.
  * Displays each item as a row in a table.
  * Allows the user to change the post title or delete the item. */
-class Item extends Component<ItemProps, ItemState> {
+class Item extends Component<MutableItemProps, ItemState> {
 
     state = {
         // When selected, an item can be modified.
@@ -52,7 +57,7 @@ class Item extends Component<ItemProps, ItemState> {
     row: RefObject<HTMLTableRowElement> = React.createRef();
     // Reference to the input box for renaming post titles.
     input: RefObject<HTMLInputElement> = React.createRef();
-    
+
     render() {
         return (
 
@@ -63,12 +68,12 @@ class Item extends Component<ItemProps, ItemState> {
 
                 <td>{!this.state.selected ? this.state.title :
                     /* If item is selected, show input box for renaming. */ (
-                    <span>
-                        <input type="text" ref={this.input}
-                            onChange={this.onRename.bind(this)}
-                            defaultValue={this.state.title} />
-                    </span>
-                )}</td>
+                        <span>
+                            <input type="text" ref={this.input}
+                                onChange={this.onRename.bind(this)}
+                                defaultValue={this.state.title} />
+                        </span>
+                    )}</td>
 
                 <td>{this.props.album.title}</td>
                 <td>{this.props.user.username} </td>
@@ -100,7 +105,7 @@ class Item extends Component<ItemProps, ItemState> {
                 this.input.current!.select();
             }
 
-        // Unselect this item if somewhere else was clicked.
+            // Unselect this item if somewhere else was clicked.
         } else {
             // Update the actual title.
             if (this.state.selected) {
@@ -120,7 +125,7 @@ class Item extends Component<ItemProps, ItemState> {
             }
             this.setState({ selected: false });
 
-        // If escape is pressed, unselect the item and discard the modification.
+            // If escape is pressed, unselect the item and discard the modification.
         } else if (e.code === 'Escape') {
             this.setState({ selected: false });
         }
@@ -169,11 +174,20 @@ class ItemList extends Component<ListProps> {
                 <tbody>
                     {this.props.items.map(i => (
                         <Item key={i.key} post={i.post}
-                            album={i.album} user={i.user} />
+                            album={i.album} user={i.user}
+                            rename={this.rename} delete={this.delete} />
                     ))}
                 </tbody>
             </table>
         )
+    }
+
+    rename(key: number, title: string) {
+
+    }
+
+    delete(key: number) {
+
     }
 }
 
@@ -230,10 +244,12 @@ class CrudApp extends Component<AppProps, AppState> {
             fetch(URL + 'albums/' + albumId).then(r => r.json()),
             fetch(URL + 'users/' + userId).then(r => r.json())
 
-        // Wait for the completion of all requests, and construct an 'Item'.
-        ]).then(r => { return {
-             key: key, post: r[0], album: r[1], user: r[2]
-        }});
+            // Wait for the completion of all requests, and construct an 'Item'.
+        ]).then(r => {
+            return {
+                key: key, post: r[0], album: r[1], user: r[2]
+            }
+        });
     }
 }
 
