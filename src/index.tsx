@@ -107,7 +107,7 @@ class Item extends Component<MutableItemProps, ItemState> {
                 this.setState({ title: this.props.post.title, selected: true });
                 this.input.current!.select();
             }
-        } else {
+        } else if (this.state.selected) {
             this.props.rename(this.state.title);
             this.setState({ selected: false });
         }
