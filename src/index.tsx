@@ -102,7 +102,6 @@ class Item extends Component<MutableItemProps, ItemState> {
             //and not already selected, select it.
             if (!this.state.selected) {
                 this.setState({ title: this.props.post.title, selected: true });
-                this.input.current!.select();
             }
 
         // If somewhere else is clicked, unselect this item.
@@ -114,6 +113,11 @@ class Item extends Component<MutableItemProps, ItemState> {
 
     // Called when a mouse click is released.
     onRelease(e: MouseEvent) {
+
+        // Automatically select the input field.
+        if (this.state.selected) {
+            this.input.current!.select();
+        }
 
         // Delete this item if the delete button is clicked on.
         if (this.delete.current != null &&
